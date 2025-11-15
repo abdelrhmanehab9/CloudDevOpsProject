@@ -1,0 +1,11 @@
+# في مجلد docker
+cat > docker/.dockerignore << EOF
+node_modules
+.git
+.gitignore
+*.md
+.env
+__pycache__
+*.pyc
+.pytest_cache
+EOF

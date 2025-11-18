@@ -1,0 +1,12 @@
+- name: Setup Jenkins
+  hosts: _jenkins
+  become: yes
+  roles:
+    - jenkins
+
+- name: Setup Apache
+  hosts: _apache
+  become: yes
+  roles:
+    - apache
+

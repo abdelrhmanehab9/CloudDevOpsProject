@@ -1,0 +1,10 @@
+- hosts: jenkins
+  become: yes
+  roles:
+    - jenkins
+
+- hosts: apache
+  become: yes
+  roles:
+    - apache
+

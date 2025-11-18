@@ -1,0 +1,59 @@
+---
+# 1. Install Java 17 (Jenkins requirement)
+- name: Install Java 17 on Amazon Linux
+  ansible.builtin.package:
+    name: java-17-amazon-corretto
+    state: present
+
+# 2. Install Git
+- name: Install Git
+  ansible.builtin.package:
+    name: git
+    state: present
+
+# 3. Install Docker
+- name: Install Docker on Amazon Linux
+  ansible.builtin.package:
+    name: docker
+    state: present
+
+# 4. Start & enable Docker service
+- name: Start & enable Docker service
+  ansible.builtin.service:
+    name: docker    # Use docker.service for Amazon Linux
+    state: started
+    enabled: yes
+
+# 5. Add ec2-user to Docker group (so it can run Docker without sudo)
+- name: Add ec2-user to Docker group
+  ansible.builtin.user:
+    name: ec2-user
+    groups: docker
+    append: yes
+
+# 6. Add Jenkins repository key
+- name: Add Jenkins repository key
+  ansible.builtin.rpm_key:
+    state: present
+    key: https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+
+# 7. Add Jenkins repository definition
+- name: Add Jenkins repository definition
+  ansible.builtin.get_url:
+    url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+    dest: /etc/yum.repos.d/jenkins.repo
+    mode: '0644'
+
+# 8. Install Jenkins
+- name: Install Jenkins package
+  ansible.builtin.package:
+    name: jenkins
+    state: present
+
+# 9. Start & enable Jenkins service
+- name: Start & enable Jenkins service
+  ansible.builtin.service:
+    name: jenkins
+    state: started
+    enabled: yes
+

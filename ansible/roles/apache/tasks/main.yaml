@@ -1,0 +1,38 @@
+---
+# 1. Install Apache Web Server (httpd)
+- name: Install HTTPD
+  ansible.builtin.package:
+    name: httpd
+    state: present
+
+# 2. Install Git
+- name: Install Git
+  ansible.builtin.package:
+    name: git
+    state: present
+
+# 3. Install Docker
+- name: Install Docker
+  ansible.builtin.package:
+    name: docker
+    state: present
+
+# 4. Install Java 17 (Recommended for Amazon Linux 2023)
+- name: Install Java 17
+  ansible.builtin.package:
+    name: java-17-amazon-corretto
+    state: present
+
+# 5. Ensure Docker service is running and enabled
+- name: Ensure Docker service is running
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: yes
+
+# 6. Ensure Apache service is running and enabled
+- name: Ensure Apache service is running
+  ansible.builtin.service:
+    name: httpd
+    state: started
+    enabled: yes

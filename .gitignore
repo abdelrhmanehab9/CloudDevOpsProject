@@ -1,1 +1,7 @@
+# .gitignore
+# Terraform generated files and providers
+.terraform/
+*.tfplan
+*.tfstate
+*.tfstate.backup
 *.pem

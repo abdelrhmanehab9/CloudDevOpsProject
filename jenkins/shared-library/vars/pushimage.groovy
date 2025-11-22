@@ -1,19 +1,17 @@
 def call(Map params = [:]) {
-
     def imageName = params.imageName
     def imageTag = params.imageTag
-
+    def dockerfile = params.dockerfile ?: "Dockerfile"
+    def context = params.context ?: "."
+    
     if (!imageName || !imageTag) {
-        error "pushImage: 'imageName' and 'imageTag' are required!"
+        error "buildImage: 'imageName' and 'imageTag' are required!"
     }
-
-    echo "Pushing Docker image to registry..."
-
+    
+    echo "🐋 Building Docker image: ${imageName}:${imageTag}"
     sh """
-        docker push ${imageName}:${imageTag}
-        docker push ${imageName}:latest
+        docker build -t ${imageName}:${imageTag} -f ${dockerfile} ${context}
+        docker tag ${imageName}:${imageTag} ${imageName}:latest
     """
-
-    echo "Image pushed: ${imageName}:${imageTag}"
+    echo "✅ Docker image built successfully: ${imageName}:${imageTag}"
 }
-

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: clouddevopsproject-clusterip
+  namespace: ivolve
+  labels:
+    app: clouddevopsproject
+spec:
+  type: ClusterIP
+  selector:
+    app: clouddevopsproject
+  ports:
+  - name: http
+    port: 80      
+    targetPort: 80
+    protocol: TCP
+

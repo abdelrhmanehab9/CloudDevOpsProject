@@ -1,0 +1,139 @@
+@Library('shared-library') _
+
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = "docker.io"
+        DOCKER_USERNAME = "abdelrhmanehab11"
+        DOCKER_PASSWORD = credentials('dockerhub-token')
+        IMAGE_NAME = "abdelrhmanehab11/test"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        GIT_REPO = "https://github.com/abdelrhmanehab9/CloudDevOpsProject.git"
+        GIT_BRANCH = "main"
+        MANIFEST_DIR = "kubernetes/manifests"
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timeout(time: 1, unit: 'HOURS')
+        timestamps()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    echo "Checking out code from Git..."
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: "*/${GIT_BRANCH}"]],
+                        userRemoteConfigs: [[url: "${GIT_REPO}"]]
+                    ])
+                }
+            }
+        }
+
+        stage('Build Image') {
+            steps {
+                script {
+                    echo "Building Docker image..."
+                    buildImage(
+                        imageName: "${IMAGE_NAME}",
+                        imageTag: "${IMAGE_TAG}",
+                        dockerfile: "docker/Dockerfile",
+                        context: "docker"
+                    )
+                }
+            }
+        }
+
+        stage('Scan Image') {
+            steps {
+                script {
+                    echo "Scanning Docker image with Trivy..."
+                    scanImage(
+                        imageName: "${IMAGE_NAME}",
+                        imageTag: "${IMAGE_TAG}",
+                        severity: "HIGH,CRITICAL"
+                    )
+                }
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                script {
+                    echo "Pushing image to DockerHub..."
+                    withDockerRegistry([credentialsId: 'dockerhub-credentials', url: "https://${DOCKER_REGISTRY}"]) {
+                        pushImage(
+                            imageName: "${IMAGE_NAME}",
+                            imageTag: "${IMAGE_TAG}"
+                        )
+                    }
+                }
+            }
+        }
+
+        stage('Delete Local Image') {
+            steps {
+                script {
+                    echo "Deleting local Docker image..."
+                    sh """
+                        docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true
+                        docker rmi ${IMAGE_NAME}:latest || true
+                        echo "Local images deleted"
+                    """
+                }
+            }
+        }
+
+        stage('Update Manifests') {
+            steps {
+                script {
+                    echo "Updating Kubernetes manifests with new image..."
+                    updateManifests(
+                        manifestDir: "${MANIFEST_DIR}",
+                        imageName: "${IMAGE_NAME}",
+                        imageTag: "${IMAGE_TAG}"
+                    )
+                }
+            }
+        }
+
+        stage('Commit & Push Manifests') {
+            steps {
+                script {
+                    echo "Committing and pushing updated manifests..."
+                    withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                        sh """
+                            cd ${WORKSPACE}
+                            git config user.name "Jenkins CI"
+                            git config user.email "jenkins@clouddevops.local"
+                            git add ${MANIFEST_DIR}/*
+                            git commit -m "Update image to ${IMAGE_NAME}:${IMAGE_TAG}" || true
+                            git push https://${GIT_USER}:${GIT_PASS}@github.com/abdelrhmanehab9/CloudDevOpsProject.git ${GIT_BRANCH}
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "🧹 Cleanup and archiving artifacts..."
+            cleanWs()
+        }
+
+        success {
+            echo "✅ Pipeline succeeded!"
+            // Optional: Send notification
+        }
+
+        failure {
+            echo "❌ Pipeline failed!"
+            // Optional: Send notification
+        }
+    }
+}

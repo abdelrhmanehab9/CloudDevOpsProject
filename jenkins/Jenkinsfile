@@ -108,7 +108,7 @@ pipeline {
             steps {
                 script {
                     echo "📤 Committing and pushing updated manifests..."
-                    withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: 'Github-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         sh """
                             cd ${WORKSPACE}
                             git config user.name "Jenkins CI"

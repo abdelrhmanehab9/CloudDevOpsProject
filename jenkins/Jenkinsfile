@@ -64,11 +64,15 @@ pipeline {
             steps {
                 script {
                     echo "📤 Pushing image to DockerHub..."
-                    withDockerRegistry([credentialsId: 'docker-hub-creds', url: "https://${DOCKER_REGISTRY}"]) {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh """
+                            echo "\${DOCKER_PASS}" | docker login ${DOCKER_REGISTRY} -u "\${DOCKER_USER}" --password-stdin
+                        """
                         pushImage(
                             imageName: "${IMAGE_NAME}",
                             imageTag: "${IMAGE_TAG}"
                         )
+                        sh "docker logout ${DOCKER_REGISTRY}"
                     }
                 }
             }

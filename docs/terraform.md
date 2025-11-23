@@ -195,4 +195,4 @@ git push origin main
 
 ## Deliverables:
 
-- Terraform Files : `https://github.com/ziadtd/CloudDevOpsProject/blob/main/terraform/`
+- Terraform Files : `https://github.com/abdelrhmanehab9/CloudDevOpsProject/tree/main/terraform`

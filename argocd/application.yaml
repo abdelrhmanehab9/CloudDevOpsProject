@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: clouddevops-app
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  # مصدر الكود - GitHub Repository
+  source:
+    repoURL: https://github.com/abdelrhmanehab9/CloudDevOpsProject.git
+    targetRevision: main
+    path: kubernetes/manifests
+  
+  # الوجهة - Kubernetes Cluster
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ivolve
+  
+  # إعدادات المزامنة التلقائية
+  syncPolicy:
+    automated:
+      prune: true        # حذف الموارد التي تم إزالتها من Git
+      selfHeal: true     # إصلاح أي تغييرات يدوية في الكلستر
+      allowEmpty: false
+    
+    syncOptions:
+      - CreateNamespace=true  # إنشاء namespace تلقائياً
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  
+  # إعدادات الصحة والحالة
+  revisionHistoryLimit: 10

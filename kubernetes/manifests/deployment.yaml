@@ -13,11 +13,18 @@ spec:
       labels:
         app: clouddevopsproject
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: clouddevopsproject
       containers:
         - name: clouddevopsproject
           image: abdelrhmanehab11/test:latest
           ports:
-            - containerPort: 5000   # نفس الـ port اللي التطبيق شغال عليه
+            - containerPort: 5000
           env:
             - name: DATABASE_USER
               valueFrom:
@@ -43,4 +50,3 @@ spec:
               memory: 128Mi
       imagePullSecrets:
         - name: clouddevopsproject-dockerhub-secret
-

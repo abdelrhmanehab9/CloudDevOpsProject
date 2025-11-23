@@ -7,9 +7,9 @@
 ## Author
 
 **Zeyad Elgohari** — Cloud & DevOps Engineer  
-- GitHub: [github.com/ziadtd](https://github.com/ziadtd)  
-- LinkedIn: [linkedin.com/in/ziadtd](https://linkedin.com/in/ziadtd)  
-- Email: ziadtareqd22@gmail.com  
+- GitHub: [github.com/abdelrhmanehab9](https://github.com/abdelrhmanehab9)  
+- LinkedIn: [linkedin.com/in/abdelrhmanehab9](https://www.linkedin.com/in/abdelrhmanehab9/)  
+- Email: abdelrhmanehab993@gmail.com  
 
 --- 
 

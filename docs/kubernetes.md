@@ -78,4 +78,4 @@ git push origin main
 
 ## Deliverables:
 
-- Kubernetes Yaml files at: `https://github.com/ziadtd/CloudDevOpsProject/blob/main/kubernetes/`
+- Kubernetes Yaml files at: `https://github.com/abdelrhmanehab9/CloudDevOpsProject/tree/main/kubernetes/manifests`

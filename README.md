@@ -6,7 +6,7 @@
 
 ## Author
 
-**Zeyad Elgohari** — Cloud & DevOps Engineer  
+**Abdelrhman Ehab** — Cloud & DevOps Engineer  
 - GitHub: [github.com/abdelrhmanehab9](https://github.com/abdelrhmanehab9)  
 - LinkedIn: [linkedin.com/in/abdelrhmanehab9](https://www.linkedin.com/in/abdelrhmanehab9/)  
 - Email: abdelrhmanehab993@gmail.com  

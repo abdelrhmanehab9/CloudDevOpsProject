@@ -186,16 +186,9 @@ Click **New repository secret**
    - Value: Paste DockerHub token
 Click **Add secret**
 
-### Create The Workflow File
-
-In the repo create [`pipeline.yaml`](../.github/workflows/pipeline.yaml)
-
 
 Then to trigger the Pipeline **Push a tag**:
    ```bash
    git tag v6.5
    git push origin v6.5
    ```
-
-## Deliverables 
-Github Pipeline File: at: `https://github.com/ziadtd/CloudDevOpsProject/blob/main/.github/workflows/pipeline.yaml`

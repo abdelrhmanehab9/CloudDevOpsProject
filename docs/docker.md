@@ -100,5 +100,5 @@ git push origin main
 
 ## Deliverables:
 
-- Docker Image: `https://hub.docker.com/repository/docker/ziadtd/flask-app/general`
-- Dockerfile at: `https://github.com/ziadtd/CloudDevOpsProject/main/docker/Dockerfile`
+- Docker Image: `https://hub.docker.com/repository/docker/abdelrhmanehab11/test/general`
+- Dockerfile at: `https://github.com/abdelrhmanehab9/CloudDevOpsProject/blob/main/docker/Dockerfile`

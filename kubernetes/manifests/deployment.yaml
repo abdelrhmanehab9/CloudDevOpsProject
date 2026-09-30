@@ -22,7 +22,7 @@ spec:
               app: clouddevopsproject
       containers:
         - name: clouddevopsproject
-          image: abdelrhmanehab11/test:14
+          image: abdelrhmanehab11/test:16
           ports:
             - containerPort: 5000
           env:

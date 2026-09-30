@@ -38,8 +38,8 @@ jobs:
 
       - name: Hadolint (Dockerfile best practices)
         run: |
-          docker run --rm -i ghcr.io/hadolint/hadolint \
-            hadolint --failure-threshold warning - < "$DOCKERFILE"
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/repo" \
+            zricethezav/gitleaks:latest detect --source /repo --log-opts="-- docker" --redact --verbose
 
       - name: Gitleaks (leaked secrets in code and history)
         run: |

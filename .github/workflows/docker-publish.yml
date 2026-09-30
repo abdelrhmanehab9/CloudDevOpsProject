@@ -18,7 +18,7 @@ concurrency:
 
 env:
   IMAGE: abdelrhmanehab11/flask-app   # change flask-app to your Docker Hub repository name
-  DOCKER_CONTEXT: docker
+  BUILD_CONTEXT: docker
   DOCKERFILE: docker/Dockerfile
   APP_PORT: "5000"                    # port the Flask app listens on, used by the smoke test
 
@@ -73,7 +73,7 @@ jobs:
       - name: Build image locally (not pushed yet)
         uses: docker/build-push-action@v6
         with:
-          context: ${{ env.DOCKER_CONTEXT }}
+          context: ${{ env.BUILD_CONTEXT }}
           file: ${{ env.DOCKERFILE }}
           load: true
           tags: ${{ env.IMAGE }}:candidate
@@ -86,7 +86,7 @@ jobs:
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           scan-type: config
-          scan-ref: ${{ env.DOCKER_CONTEXT }}
+          scan-ref: ${{ env.BUILD_CONTEXT }}
           severity: HIGH,CRITICAL
           exit-code: "1"
 
@@ -135,7 +135,7 @@ jobs:
         id: push
         uses: docker/build-push-action@v6
         with:
-          context: ${{ env.DOCKER_CONTEXT }}
+          context: ${{ env.BUILD_CONTEXT }}
           file: ${{ env.DOCKERFILE }}
           push: true
           tags: |

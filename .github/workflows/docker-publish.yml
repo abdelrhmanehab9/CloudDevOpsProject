@@ -1,0 +1,207 @@
+name: Docker Build, Scan and Publish
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docker/**"
+      - ".github/workflows/docker-publish.yml"
+
+# Least privilege by default. Jobs raise only what they need.
+permissions:
+  contents: read
+
+# Never run two publishes at the same time for the same branch.
+concurrency:
+  group: docker-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: abdelrhmanehab11/flask-app   # change flask-app to your Docker Hub repository name
+  DOCKER_CONTEXT: docker
+  DOCKERFILE: docker/Dockerfile
+  APP_PORT: "5000"                    # port the Flask app listens on, used by the smoke test
+
+jobs:
+  # ---------------------------------------------------------------
+  # 1) Static checks before building anything
+  # ---------------------------------------------------------------
+  checks:
+    name: Lint and secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history so gitleaks can scan old commits too
+          persist-credentials: false
+
+      - name: Hadolint (Dockerfile best practices)
+        run: |
+          docker run --rm -i ghcr.io/hadolint/hadolint \
+            hadolint --failure-threshold warning - < "$DOCKERFILE"
+
+      - name: Gitleaks (leaked secrets in code and history)
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/repo" \
+            zricethezav/gitleaks:latest detect --source /repo --redact --verbose
+
+  # ---------------------------------------------------------------
+  # 2) Build, scan, then publish only if everything passed
+  # ---------------------------------------------------------------
+  build-scan-publish:
+    name: Build, scan and publish
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write             # keyless signing with cosign (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Compute version
+        id: meta
+        run: |
+          echo "version=1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image locally (not pushed yet)
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.DOCKER_CONTEXT }}
+          file: ${{ env.DOCKERFILE }}
+          load: true
+          tags: ${{ env.IMAGE }}:candidate
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # trivy-action is pinned to the full commit SHA of v0.35.0, the known safe
+      # release after the March 2026 tag-hijack incident. Do not switch it to a tag.
+      - name: Trivy - Dockerfile misconfiguration gate
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          scan-type: config
+          scan-ref: ${{ env.DOCKER_CONTEXT }}
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+
+      - name: Trivy - generate SBOM
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: ${{ env.IMAGE }}:candidate
+          format: cyclonedx
+          output: sbom.cdx.json
+
+      - name: Trivy - vulnerability and secret gate (fails on HIGH or CRITICAL)
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: ${{ env.IMAGE }}:candidate
+          scanners: vuln,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: table
+          exit-code: "1"
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ steps.meta.outputs.version }}
+          path: sbom.cdx.json
+
+      - name: Smoke test (container must start and stay up)
+        run: |
+          docker run -d --name smoke -p "$APP_PORT:$APP_PORT" "$IMAGE:candidate"
+          sleep 8
+          if [ "$(docker inspect -f '{{.State.Running}}' smoke)" != "true" ]; then
+            echo "Container exited during smoke test. Logs:"
+            docker logs smoke
+            exit 1
+          fi
+          docker rm -f smoke
+
+      # ---- everything above passed, now publish ----
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: abdelrhmanehab11
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push versioned image with provenance and SBOM attestations
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.DOCKER_CONTEXT }}
+          file: ${{ env.DOCKERFILE }}
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.version }}
+            ${{ env.IMAGE }}:sha-${{ steps.meta.outputs.sha }}
+            ${{ env.IMAGE }}:latest
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign the image by digest (keyless)
+        run: cosign sign --yes "$IMAGE@${{ steps.push.outputs.digest }}"
+
+  # ---------------------------------------------------------------
+  # 3) Email on failure: which job, which step, and the last log lines
+  # ---------------------------------------------------------------
+  notify-failure:
+    name: Email on failure
+    needs: [checks, build-scan-publish]
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    steps:
+      - name: Collect failure details
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          {
+            echo "Repository : $REPO"
+            echo "Branch     : $GITHUB_REF_NAME"
+            echo "Commit     : $GITHUB_SHA"
+            echo "Pushed by  : $GITHUB_ACTOR"
+            echo "Run link   : $GITHUB_SERVER_URL/$REPO/actions/runs/$RUN_ID"
+            echo
+          } > report.txt
+
+          gh api "repos/$REPO/actions/runs/$RUN_ID/jobs" --paginate \
+            --jq '.jobs[] | select(.conclusion=="failure") | "\(.id)|\(.name)|\([.steps[] | select(.conclusion=="failure") | .name] | join(", "))"' \
+            > failed.txt
+
+          while IFS='|' read -r id job step; do
+            {
+              echo "Failed job  : $job"
+              echo "Failed step : $step"
+              echo "----- last 40 log lines -----"
+              gh api "repos/$REPO/actions/jobs/$id/logs" | tail -n 40
+              echo
+            } >> report.txt
+          done < failed.txt
+
+      - name: Send email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          to: ${{ secrets.MAIL_USERNAME }}
+          from: GitHub Actions
+          subject: "FAILED: ${{ github.repository }} (${{ github.ref_name }}) run ${{ github.run_number }}"
+          body: file://report.txt

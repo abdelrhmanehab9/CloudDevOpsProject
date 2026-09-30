@@ -22,7 +22,11 @@ spec:
               app: clouddevopsproject
       containers:
         - name: clouddevopsproject
-          image: abdelrhmanehab11/test:16
+
+
+          # التعديل هنا: تم تغيير الاسم إلى flask-app ليتطابق مع الـ Pipeline
+          image: abdelrhmanehab11/flask-app:latest
+
           ports:
             - containerPort: 5000
           env:

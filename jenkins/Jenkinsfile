@@ -64,7 +64,7 @@ pipeline {
             steps {
                 script {
                     echo "📤 Pushing image to DockerHub..."
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: 'Dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         sh """
                             echo "\${DOCKER_PASS}" | docker login ${DOCKER_REGISTRY} -u "\${DOCKER_USER}" --password-stdin
                         """
@@ -108,14 +108,14 @@ pipeline {
             steps {
                 script {
                     echo "📤 Committing and pushing updated manifests..."
-                    withCredentials([usernamePassword(credentialsId: 'Github-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: 'Github', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
                         sh """
                             cd ${WORKSPACE}
                             git config user.name "Jenkins CI"
                             git config user.email "jenkins@clouddevops.local"
                             git add ${MANIFEST_DIR}/*
                             git commit -m "Update image to ${IMAGE_NAME}:${IMAGE_TAG} [Build #${BUILD_NUMBER}]" || echo "No changes to commit"
-                            git push https://${GIT_USER}:${GIT_PASS}@github.com/abdelrhmanehab9/CloudDevOpsProject.git ${GIT_BRANCH} || echo "Push failed or nothing to push"
+                            git push https://${GIT_USER}:${GIT_PASS}@github.com/abdelrhmanehab9/CloudDevOpsProject.git HEAD:${GIT_BRANCH}
                         """
                     }
                 }

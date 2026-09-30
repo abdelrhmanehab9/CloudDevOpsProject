@@ -44,7 +44,7 @@ jobs:
       - name: Gitleaks (leaked secrets in code and history)
         run: |
           docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/repo" \
-            zricethezav/gitleaks:latest detect --source /repo --redact --verbose
+            zricethezav/gitleaks:latest detect --source /repo --log-opts="-- docker" --redact --verbose
 
   # ---------------------------------------------------------------
   # 2) Build, scan, then publish only if everything passed

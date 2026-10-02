@@ -1,4 +1,4 @@
-# Base image
+# Base 
 FROM python:3.9-slim
 
 # Update system packages and clear cache to fix vulnerabilities

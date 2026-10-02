@@ -4,7 +4,7 @@ metadata:
   name: clouddevopsproject-deployment
   namespace: ivolve
 spec:
-  replicas: 2
+  replicas: 4
   selector:
     matchLabels:
       app: clouddevopsproject

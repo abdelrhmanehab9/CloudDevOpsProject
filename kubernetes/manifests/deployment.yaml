@@ -25,7 +25,7 @@ spec:
 
 
           # التعديل هنا: تم تغيير الاسم إلى flask-app ليتطابق مع الـ Pipeline
-          image: abdelrhmanehab11/flask-app:latest
+          image: abdelrhmanehab11/flask-app:1.10
 
           ports:
             - containerPort: 5000

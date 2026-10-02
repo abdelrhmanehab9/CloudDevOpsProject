@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  IMAGE: abdelrhmanehab11/flask-app   # الصورة على Docker Hub
+  IMAGE: abdelrhmanehab11/flask-app
   BUILD_CONTEXT: docker
   DOCKERFILE: docker/Dockerfile
   APP_PORT: "5000"
@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: write             # مسموح للـ Pipeline بالكتابة وتحديث ملف Deployment في الريبو
+      contents: write
       id-token: write             
     steps:
       - uses: actions/checkout@v4
@@ -62,7 +62,6 @@ jobs:
       - name: Compute version
         id: meta
         run: |
-          # الإصدار هيبقى 1.1, 1.2, 1.3 بناءً على رقم الـ Run
           echo "version=1.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
           echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
@@ -120,7 +119,9 @@ jobs:
           fi
           docker rm -f smoke
 
-      # ---- الرفع على Docker Hub ----
+      # ---------------------------------------------------------------
+      # Push to Docker Hub
+      # ---------------------------------------------------------------
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -136,8 +137,6 @@ jobs:
           push: true
           tags: |
             ${{ env.IMAGE }}:${{ steps.meta.outputs.version }}
-            ${{ env.IMAGE }}:sha-${{ steps.meta.outputs.sha }}
-            ${{ env.IMAGE }}:latest
           provenance: mode=max
           sbom: true
           cache-from: type=gha
@@ -149,7 +148,7 @@ jobs:
         run: cosign sign --yes "$IMAGE@${{ steps.push.outputs.digest }}"
 
       # ---------------------------------------------------------------
-      # تعديل ملف deployment.yaml تلقائياً ليعمل ArgoCD
+      # Update deployment.yaml automatically for ArgoCD
       # ---------------------------------------------------------------
       - name: Update Image Tag in Kubernetes Deployment
         run: |

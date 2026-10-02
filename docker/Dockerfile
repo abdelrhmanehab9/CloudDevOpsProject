@@ -1,30 +1,32 @@
-# استخدام Python base image
+# Base image
 FROM python:3.9-slim
 
-# تحديث حزم النظام لسد الثغرات الأمنية ومسح الكاش
+# Update system packages and clear cache to fix vulnerabilities
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 
-# إنشاء مجموعة ومستخدم جديد للأمان (عشان Trivy)
+# Create a non-root user and group for security (Trivy requirement)
 RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 
-# تحديد working directory
+# Set working directory
 WORKDIR /app
 
-# نسخ متطلبات المشروع
+# Copy dependencies
 COPY requirements.txt .
 
-# تحديث أدوات بايثون الأساسية أولاً، ثم تثبيت مكتبات المشروع (عشان Trivy)
+# Install Python tools and project dependencies
+# hadolint ignore=DL3013
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
-# نسخ كل ملفات التطبيق مع تغيير ملكيتها للمستخدم الجديد
+# Copy application files and change ownership to the non-root user
 COPY --chown=appuser:appgroup . .
 
-# التبديل إلى المستخدم العادي
+# Switch to the non-root user
+# hadolint ignore=DL3066
 USER appuser
 
-# فتح البورت
+# Expose application port
 EXPOSE 5000
 
-# تشغيل التطبيق (وتأكد إن app.py بيعمل run على 0.0.0.0)
+# Run the application
 CMD ["python", "app.py"]

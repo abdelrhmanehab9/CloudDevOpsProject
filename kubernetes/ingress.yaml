@@ -15,6 +15,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: flask-app-service
+            name: clouddevopsproject-service
             port:
-              number: 90
+              number: 80

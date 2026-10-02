@@ -25,7 +25,7 @@ spec:
 
 
           
-          image: abdelrhmanehab11/flask-app:1.10
+          image: abdelrhmanehab11/flask-app:1.11
 
           ports:
             - containerPort: 5000
